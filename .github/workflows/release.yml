@@ -2,15 +2,48 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
     name: Build ${{ matrix.target }}
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,6 +67,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.new_release_version }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -66,25 +101,33 @@ jobs:
         run: |
           Compress-Archive -Path target/${{ matrix.target }}/release/yaml-tftpl-lsp.exe -DestinationPath yaml-tftpl-lsp-${{ matrix.target }}.zip
 
+      - name: Generate checksums
+        shell: bash
+        run: |
+          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
+            shasum -a 256 yaml-tftpl-lsp-${{ matrix.target }}.tar.gz > yaml-tftpl-lsp-${{ matrix.target }}.tar.gz.sha256
+          else
+            shasum -a 256 yaml-tftpl-lsp-${{ matrix.target }}.zip > yaml-tftpl-lsp-${{ matrix.target }}.zip.sha256
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: yaml-tftpl-lsp-${{ matrix.target }}
-          path: yaml-tftpl-lsp-${{ matrix.target }}.*
+          path: |
+            yaml-tftpl-lsp-${{ matrix.target }}.*
 
-  release:
-    name: Create Release
-    needs: build
+  upload-assets:
+    name: Upload Release Assets
+    needs: [release, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: Upload assets to release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          tag_name: v${{ needs.release.outputs.new_release_version }}
           files: artifacts/*
