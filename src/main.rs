@@ -1,15 +1,9 @@
 //! yaml-tftpl-lsp: LSP server for YAML Terraform template files with GCP Workflows syntax
 
-mod backend;
-mod document;
-mod diagnostics;
-mod parser;
-mod schema;
-
 use tower_lsp::{LspService, Server};
 use tracing_subscriber::EnvFilter;
 
-use crate::backend::Backend;
+use yaml_tftpl_lsp::Backend;
 
 #[tokio::main]
 async fn main() {

@@ -29,7 +29,20 @@ impl Backend {
 
     /// Validate a document and publish diagnostics
     async fn validate_document(&self, uri: &Url, text: &str, version: Option<i32>) {
+        tracing::debug!(
+            uri = %uri,
+            version = ?version,
+            text_len = text.len(),
+            "Validating document"
+        );
+
         let diagnostics = self.compute_diagnostics(text);
+
+        tracing::info!(
+            uri = %uri,
+            diagnostics_count = diagnostics.len(),
+            "Publishing diagnostics"
+        );
 
         self.client
             .publish_diagnostics(uri.clone(), diagnostics, version)
@@ -44,10 +57,17 @@ impl Backend {
         let mut collector = DiagnosticCollector::new();
 
         // Preprocess expressions to replace ${} and $${} with placeholders
+        tracing::trace!("Preprocessing expressions");
         let (preprocessed, expression_map) = preprocess_expressions(text);
+        tracing::trace!(
+            expression_count = expression_map.expressions.len(),
+            "Expressions preprocessed"
+        );
 
         // Parse YAML and collect errors
+        tracing::trace!("Parsing YAML");
         crate::parser::parse_yaml(&preprocessed, &expression_map, &mut collector);
+        tracing::trace!("YAML parsing complete");
 
         collector.into_diagnostics()
     }

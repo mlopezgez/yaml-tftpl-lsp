@@ -10,6 +10,7 @@ use super::expressions::ExpressionMap;
 
 /// Result of parsing YAML, containing any parsed value
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ParseResult {
     /// The parsed YAML value (if successful)
     pub value: Option<serde_yaml::Value>,

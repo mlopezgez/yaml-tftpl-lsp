@@ -1,0 +1,16 @@
+main:
+  params:
+    - project_id
+    - workflow_name
+  steps:
+    - initialize:
+        assign:
+          - result: "Hello ${var.project_id}"
+          - timestamp: $${sys.now()}
+    - process:
+        call: http.get
+        args:
+          url: https://api.example.com/data
+        result: api_result
+    - returnValue:
+        return: $${result}

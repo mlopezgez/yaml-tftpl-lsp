@@ -2,6 +2,7 @@
 
 /// Represents a single expression found in the document
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Expression {
     /// The original text of the expression (e.g., "${var.name}")
     pub original: String,
@@ -52,6 +53,7 @@ pub enum ExpressionKind {
 
 /// Represents a position offset caused by placeholder substitution
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct PositionDelta {
     /// The line where this expression starts (in preprocessed text)
     preprocessed_line: u32,
@@ -92,6 +94,7 @@ impl ExpressionMap {
     }
 
     /// Find an expression by its placeholder
+    #[allow(dead_code)]
     pub fn find_by_placeholder(&self, placeholder: &str) -> Option<&Expression> {
         self.expressions
             .iter()
@@ -182,6 +185,7 @@ impl ExpressionMap {
     }
 
     /// Check if a position falls within any expression
+    #[allow(dead_code)]
     pub fn is_within_expression(&self, line: u32, column: u32) -> bool {
         for delta in &self.position_deltas {
             if delta.preprocessed_line == line

@@ -281,11 +281,11 @@ Phase 3: YAML Parser Integration
 - [X] Adjust error positions for placeholder substitution
 - [X] Unit tests with malformed YAML
 Phase 4: LSP Server Foundation
-- [ ] Implement LanguageServer trait
-- [ ] Set up stdio transport
-- [ ] Handle document sync events
-- [ ] Implement publish_diagnostics
-- [ ] Add logging with tracing
+- [X] Implement LanguageServer trait
+- [X] Set up stdio transport
+- [X] Handle document sync events
+- [X] Implement publish_diagnostics
+- [X] Add logging with tracing
 Phase 5: Diagnostic Publishing
 - [ ] Convert YAML errors to LSP diagnostics
 - [ ] Map error positions to line/column

@@ -2,6 +2,7 @@
 
 /// Represents the state of a text document
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Document {
     /// The document text content
     pub text: String,
