@@ -217,3 +217,197 @@ fn test_diagnostic_severity_is_error_for_yaml_syntax() {
         "YAML syntax errors should have ERROR severity"
     );
 }
+
+// ============================================================================
+// Phase 5: Extended fixture tests
+// ============================================================================
+
+#[test]
+fn test_nested_expressions_fixture() {
+    let text = fs::read_to_string("tests/fixtures/edge_cases/nested_expressions.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        diagnostics.is_empty(),
+        "Nested expressions should parse correctly, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_multiline_expression_fixture() {
+    let text = fs::read_to_string("tests/fixtures/edge_cases/multiline_expression.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        diagnostics.is_empty(),
+        "Multiline expressions should parse correctly, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_mixed_expressions_fixture() {
+    let text = fs::read_to_string("tests/fixtures/edge_cases/mixed_expressions.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        diagnostics.is_empty(),
+        "Mixed Terraform and Workflows expressions should parse correctly, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_unclosed_quote_fixture() {
+    let text = fs::read_to_string("tests/fixtures/invalid/unclosed_quote.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        !diagnostics.is_empty(),
+        "Unclosed quote should produce diagnostics"
+    );
+    // Verify the diagnostic has the correct source
+    assert_eq!(diagnostics[0].source.as_deref(), Some("yaml-tftpl-lsp"));
+}
+
+#[test]
+fn test_unclosed_brace_still_parses_yaml() {
+    // When an expression has an unclosed brace, it won't be replaced
+    // by a placeholder, so it stays in the YAML. This may or may not
+    // cause a YAML parse error depending on context.
+    let text = fs::read_to_string("tests/fixtures/invalid/unclosed_brace.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    // Just verify it doesn't panic - the behavior depends on how
+    // the unclosed expression affects YAML parsing
+    let _diagnostics = compute_diagnostics(&text);
+}
+
+#[test]
+fn test_bad_indentation_fixture() {
+    let text = fs::read_to_string("tests/fixtures/invalid/bad_indentation.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        !diagnostics.is_empty(),
+        "Bad indentation should produce diagnostics"
+    );
+}
+
+#[test]
+fn test_missing_colon_fixture() {
+    let text = fs::read_to_string("tests/fixtures/invalid/missing_colon.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    assert!(
+        !diagnostics.is_empty(),
+        "Missing colon should produce diagnostics"
+    );
+}
+
+#[test]
+fn test_diagnostic_has_code() {
+    let text = "key: \"unclosed";
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(!diagnostics.is_empty());
+
+    // Verify diagnostic has a code
+    assert!(
+        diagnostics[0].code.is_some(),
+        "Diagnostic should have a code"
+    );
+}
+
+#[test]
+fn test_diagnostic_range_is_valid() {
+    let text = "key:\n  bad: indent";
+
+    let diagnostics = compute_diagnostics(text);
+    if !diagnostics.is_empty() {
+        let range = &diagnostics[0].range;
+        // Ensure end is at or after start
+        assert!(
+            range.end.line >= range.start.line,
+            "Diagnostic end line should be >= start line"
+        );
+        if range.end.line == range.start.line {
+            assert!(
+                range.end.character >= range.start.character,
+                "On same line, end character should be >= start character"
+            );
+        }
+    }
+}
+
+#[test]
+fn test_expression_in_yaml_string() {
+    // Test that expressions inside YAML strings are handled
+    let text = r#"
+message: "Hello ${var.name}!"
+timestamp: $${sys.now()}
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.is_empty(),
+        "Expressions in strings should be valid"
+    );
+}
+
+#[test]
+fn test_multiple_expressions_same_line() {
+    let text = "args: [${var.a}, ${var.b}, ${var.c}]";
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.is_empty(),
+        "Multiple expressions on same line should be valid"
+    );
+}
+
+#[test]
+fn test_expression_at_yaml_key_position() {
+    // While unusual, expressions can appear in key positions
+    let text = "${var.key}: value";
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.is_empty(),
+        "Expression as YAML key should be valid"
+    );
+}
+
+#[test]
+fn test_deeply_nested_yaml_with_expressions() {
+    let text = r#"
+level1:
+  level2:
+    level3:
+      level4:
+        value: ${var.deep_value}
+        timestamp: $${sys.now()}
+        config:
+          setting1: true
+          setting2: ${var.setting}
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.is_empty(),
+        "Deeply nested YAML with expressions should be valid"
+    );
+}

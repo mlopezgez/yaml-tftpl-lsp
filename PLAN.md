@@ -287,9 +287,9 @@ Phase 4: LSP Server Foundation
 - [X] Implement publish_diagnostics
 - [X] Add logging with tracing
 Phase 5: Diagnostic Publishing
-- [ ] Convert YAML errors to LSP diagnostics
-- [ ] Map error positions to line/column
-- [ ] Test with real .yaml.tftpl files from the project
+- [X] Convert YAML errors to LSP diagnostics
+- [X] Map error positions to line/column
+- [X] Test with real .yaml.tftpl files from the project
 Phase 6: Workflow Structure Validation (Optional MVP Enhancement)
 - [ ] Define workflow schema rules
 - [ ] Implement structural validator

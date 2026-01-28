@@ -1,0 +1,36 @@
+# Test mixed Terraform ${} and Workflows $${} expressions
+main:
+  params:
+    - project_id
+    - environment
+  steps:
+    - initialize:
+        assign:
+          # Terraform expression (build-time)
+          - project: ${var.project_id}
+          - env: ${var.environment}
+          # Workflows expression (runtime)
+          - timestamp: $${sys.now()}
+          - execution_id: $${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+    - callService:
+        call: http.post
+        args:
+          # Mixed in URL
+          url: https://api.example.com/${var.endpoint}
+          headers:
+            Authorization: Bearer $${secret_token}
+            X-Project: ${var.project_id}
+          body:
+            time: $${timestamp}
+            env: $${env}
+        result: api_response
+    - processResult:
+        switch:
+          - condition: $${api_response.code == 200}
+            next: success
+          - condition: $${api_response.code >= 400}
+            next: handleError
+    - success:
+        return: $${api_response.body}
+    - handleError:
+        raise: $${api_response.body.error}

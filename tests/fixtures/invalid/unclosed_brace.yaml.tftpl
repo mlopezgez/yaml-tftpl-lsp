@@ -1,0 +1,8 @@
+# This file tests handling of unclosed expression braces
+# The LSP should still parse the YAML even though the expression is malformed
+main:
+  steps:
+    - init:
+        assign:
+          - value: ${var.unclosed
+          - other: "valid"

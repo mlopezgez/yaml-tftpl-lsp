@@ -1,0 +1,25 @@
+# Test deeply nested Terraform expressions
+main:
+  steps:
+    - configure:
+        assign:
+          - config: ${jsonencode({
+              level1: {
+                level2: {
+                  level3: {
+                    value: "deep"
+                  }
+                }
+              }
+            })}
+          - simple: ${var.name}
+    - process:
+        call: http.post
+        args:
+          url: https://api.example.com
+          body: ${jsonencode({
+            nested: {
+              data: var.config
+            }
+          })}
+        result: response

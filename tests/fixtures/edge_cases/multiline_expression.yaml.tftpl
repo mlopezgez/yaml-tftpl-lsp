@@ -1,0 +1,22 @@
+# Test multi-line Terraform template expressions
+main:
+  params:
+    - project_id
+  steps:
+    - init:
+        assign:
+          - config: ${jsonencode({
+              project: var.project_id,
+              settings: {
+                enabled: true,
+                timeout: 30
+              },
+              tags: [
+                "production",
+                "critical"
+              ]
+            })}
+    - log:
+        call: sys.log
+        args:
+          text: $${json.encode_to_string(config)}
