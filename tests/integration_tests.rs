@@ -532,10 +532,7 @@ helper:
     // Should have no errors or warnings (hints about unknown step modifiers are acceptable)
     let errors_and_warnings: Vec<_> = diagnostics
         .iter()
-        .filter(|d| {
-            d.severity
-                != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT)
-        })
+        .filter(|d| d.severity != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT))
         .collect();
     assert!(
         errors_and_warnings.is_empty(),
@@ -598,10 +595,7 @@ fn test_workflow_fixture_with_full_validation() {
     // Filter to only errors and warnings (hints about unknown keys are acceptable)
     let errors_and_warnings: Vec<_> = diagnostics
         .iter()
-        .filter(|d| {
-            d.severity
-                != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT)
-        })
+        .filter(|d| d.severity != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT))
         .collect();
 
     assert!(

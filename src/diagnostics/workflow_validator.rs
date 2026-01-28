@@ -64,10 +64,8 @@ pub fn validate_workflow(value: &Value, text: &str, collector: &mut DiagnosticCo
 /// Check if a value looks like a subworkflow definition (has params or steps)
 fn is_likely_subworkflow(value: &Value) -> bool {
     if let Some(map) = value.as_mapping() {
-        map.keys().any(|k| {
-            k.as_str()
-                .map_or(false, |s| s == "params" || s == "steps")
-        })
+        map.keys()
+            .any(|k| k.as_str().is_some_and(|s| s == "params" || s == "steps"))
     } else {
         false
     }
@@ -84,26 +82,16 @@ fn validate_workflow_block(
         Some(m) => m,
         None => {
             let line = find_key_line(line_index, name);
-            collector.add_workflow_warning(
-                format!("'{}' block must be a mapping", name),
-                line,
-                0,
-            );
+            collector.add_workflow_warning(format!("'{}' block must be a mapping", name), line, 0);
             return;
         }
     };
 
-    let has_steps = mapping
-        .keys()
-        .any(|k| k.as_str().map_or(false, |s| s == "steps"));
+    let has_steps = mapping.keys().any(|k| k.as_str() == Some("steps"));
 
     if !has_steps {
         let line = find_key_line(line_index, name);
-        collector.add_workflow_warning(
-            format!("'{}' block must contain 'steps'", name),
-            line,
-            0,
-        );
+        collector.add_workflow_warning(format!("'{}' block must contain 'steps'", name), line, 0);
         return;
     }
 
@@ -170,11 +158,7 @@ fn validate_steps(value: &Value, line_index: &LineIndex, collector: &mut Diagnos
 }
 
 /// Validate the body of a single step
-fn validate_step_body(
-    value: &Value,
-    line_index: &LineIndex,
-    collector: &mut DiagnosticCollector,
-) {
+fn validate_step_body(value: &Value, line_index: &LineIndex, collector: &mut DiagnosticCollector) {
     let mapping = match value.as_mapping() {
         Some(m) => m,
         None => return, // scalar or sequence step body - not necessarily invalid
@@ -186,11 +170,7 @@ fn validate_step_body(
         if let Some(s) = key.as_str() {
             if !schema::is_step_action(s) && !is_step_modifier(s) {
                 let line = find_key_line(line_index, s);
-                collector.add_hint(
-                    format!("Unknown step action: '{}'", s),
-                    line,
-                    0,
-                );
+                collector.add_hint(format!("Unknown step action: '{}'", s), line, 0);
             }
         }
     }
@@ -198,11 +178,32 @@ fn validate_step_body(
 
 /// Check if a key is a valid step modifier (not an action but valid in step context)
 fn is_step_modifier(key: &str) -> bool {
-    matches!(key, "args" | "result" | "condition" | "value" | "index" | "range" | "in"
-        | "branches" | "shared" | "concurrency_limit" | "exception_policy"
-        | "except" | "retry" | "as" | "steps" | "predicate" | "max_retries"
-        | "backoff" | "initial_delay" | "max_delay" | "multiplier" | "params"
-        | "next")
+    matches!(
+        key,
+        "args"
+            | "result"
+            | "condition"
+            | "value"
+            | "index"
+            | "range"
+            | "in"
+            | "branches"
+            | "shared"
+            | "concurrency_limit"
+            | "exception_policy"
+            | "except"
+            | "retry"
+            | "as"
+            | "steps"
+            | "predicate"
+            | "max_retries"
+            | "backoff"
+            | "initial_delay"
+            | "max_delay"
+            | "multiplier"
+            | "params"
+            | "next"
+    )
 }
 
 /// Simple line index for finding key positions in text
@@ -266,7 +267,11 @@ main:
         return: result
 "#;
         let diagnostics = parse_and_validate(yaml);
-        assert!(diagnostics.is_empty(), "Expected no diagnostics, got: {:?}", diagnostics);
+        assert!(
+            diagnostics.is_empty(),
+            "Expected no diagnostics, got: {:?}",
+            diagnostics
+        );
     }
 
     #[test]
@@ -305,7 +310,9 @@ main:
         - x: 1
 "#;
         let diagnostics = parse_and_validate(yaml);
-        assert!(diagnostics.iter().any(|d| d.message.contains("'steps' must be a list")));
+        assert!(diagnostics
+            .iter()
+            .any(|d| d.message.contains("'steps' must be a list")));
     }
 
     #[test]
@@ -319,7 +326,9 @@ main:
 something_else: true
 "#;
         let diagnostics = parse_and_validate(yaml);
-        assert!(diagnostics.iter().any(|d| d.message.contains("Unknown workflow element")));
+        assert!(diagnostics
+            .iter()
+            .any(|d| d.message.contains("Unknown workflow element")));
     }
 
     #[test]
@@ -340,7 +349,11 @@ helper:
           - x: 1
 "#;
         let diagnostics = parse_and_validate(yaml);
-        assert!(diagnostics.is_empty(), "Expected no diagnostics, got: {:?}", diagnostics);
+        assert!(
+            diagnostics.is_empty(),
+            "Expected no diagnostics, got: {:?}",
+            diagnostics
+        );
     }
 
     #[test]
@@ -356,7 +369,11 @@ main:
           - timestamp: __EXPR_001__
 "#;
         let diagnostics = parse_and_validate(yaml);
-        assert!(diagnostics.is_empty(), "Expected no diagnostics, got: {:?}", diagnostics);
+        assert!(
+            diagnostics.is_empty(),
+            "Expected no diagnostics, got: {:?}",
+            diagnostics
+        );
     }
 
     #[test]
@@ -366,6 +383,8 @@ main:
         let mut collector = DiagnosticCollector::new();
         validate_workflow(&value, yaml, &mut collector);
         let diagnostics = collector.into_diagnostics();
-        assert!(diagnostics.iter().any(|d| d.message.contains("YAML mapping")));
+        assert!(diagnostics
+            .iter()
+            .any(|d| d.message.contains("YAML mapping")));
     }
 }
