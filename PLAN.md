@@ -270,11 +270,11 @@ Phase 1: Project Setup
 - [X] Create module structure
 - [X] Add README with project description
 Phase 2: Expression Preprocessor
-- [ ] Implement regex patterns for ${...} and $${...}
-- [ ] Handle nested braces correctly
-- [ ] Create placeholder substitution system
-- [ ] Build expression position mapping
-- [ ] Unit tests with various expression patterns
+- [X] Implement regex patterns for ${...} and $${...}
+- [X] Handle nested braces correctly
+- [X] Create placeholder substitution system
+- [X] Build expression position mapping
+- [X] Unit tests with various expression patterns
 Phase 3: YAML Parser Integration
 - [ ] Integrate serde_yaml or yaml-rust2
 - [ ] Extract parse errors with positions
