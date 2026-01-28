@@ -276,10 +276,10 @@ Phase 2: Expression Preprocessor
 - [X] Build expression position mapping
 - [X] Unit tests with various expression patterns
 Phase 3: YAML Parser Integration
-- [ ] Integrate serde_yaml or yaml-rust2
-- [ ] Extract parse errors with positions
-- [ ] Adjust error positions for placeholder substitution
-- [ ] Unit tests with malformed YAML
+- [X] Integrate serde_yaml or yaml-rust2
+- [X] Extract parse errors with positions
+- [X] Adjust error positions for placeholder substitution
+- [X] Unit tests with malformed YAML
 Phase 4: LSP Server Foundation
 - [ ] Implement LanguageServer trait
 - [ ] Set up stdio transport
