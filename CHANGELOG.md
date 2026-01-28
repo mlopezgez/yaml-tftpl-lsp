@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/mlopezgez/yaml-tftpl-lsp/compare/v1.0.0...v1.0.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* use PowerShell for Windows checksum generation ([f2e5751](https://github.com/mlopezgez/yaml-tftpl-lsp/commit/f2e57514e347e4562f3e3137a904f4ac937dfe0c))
+
 # 1.0.0 (2026-01-28)
 
 

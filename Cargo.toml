@@ -1,6 +1,6 @@
 [package]
 name = "yaml-tftpl-lsp"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "LSP for YAML Terraform template files with GCP Workflows syntax"
 license = "MIT"
