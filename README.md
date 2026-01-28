@@ -28,33 +28,35 @@ Download the latest binary for your platform from [GitHub Releases](https://gith
 
 ```bash
 curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-x86_64-unknown-linux-gnu.tar.gz | tar xz
-sudo mv yaml-tftpl-lsp /usr/local/bin/
+mkdir -p ~/.local/bin && mv yaml-tftpl-lsp ~/.local/bin/
 ```
 
 #### Linux (ARM64)
 
 ```bash
 curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-aarch64-unknown-linux-gnu.tar.gz | tar xz
-sudo mv yaml-tftpl-lsp /usr/local/bin/
+mkdir -p ~/.local/bin && mv yaml-tftpl-lsp ~/.local/bin/
 ```
 
 #### macOS (Apple Silicon)
 
 ```bash
 curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-aarch64-apple-darwin.tar.gz | tar xz
-sudo mv yaml-tftpl-lsp /usr/local/bin/
+mkdir -p ~/.local/bin && mv yaml-tftpl-lsp ~/.local/bin/
 ```
 
 #### macOS (Intel)
 
 ```bash
 curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-x86_64-apple-darwin.tar.gz | tar xz
-sudo mv yaml-tftpl-lsp /usr/local/bin/
+mkdir -p ~/.local/bin && mv yaml-tftpl-lsp ~/.local/bin/
 ```
 
 #### Windows (x64)
 
 Download `yaml-tftpl-lsp-x86_64-pc-windows-msvc.zip` from the [releases page](https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest), extract it, and add the executable to your PATH.
+
+> **Note:** Ensure `~/.local/bin` is in your PATH. Add `export PATH="$HOME/.local/bin:$PATH"` to your shell profile if needed.
 
 ### Building from source
 
