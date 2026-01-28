@@ -101,14 +101,16 @@ jobs:
         run: |
           Compress-Archive -Path target/${{ matrix.target }}/release/yaml-tftpl-lsp.exe -DestinationPath yaml-tftpl-lsp-${{ matrix.target }}.zip
 
-      - name: Generate checksums
-        shell: bash
+      - name: Generate checksums (unix)
+        if: matrix.archive == 'tar.gz'
+        run: shasum -a 256 yaml-tftpl-lsp-${{ matrix.target }}.tar.gz > yaml-tftpl-lsp-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Generate checksums (windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
         run: |
-          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
-            shasum -a 256 yaml-tftpl-lsp-${{ matrix.target }}.tar.gz > yaml-tftpl-lsp-${{ matrix.target }}.tar.gz.sha256
-          else
-            shasum -a 256 yaml-tftpl-lsp-${{ matrix.target }}.zip > yaml-tftpl-lsp-${{ matrix.target }}.zip.sha256
-          fi
+          $hash = (Get-FileHash -Algorithm SHA256 yaml-tftpl-lsp-${{ matrix.target }}.zip).Hash.ToLower()
+          "$hash  yaml-tftpl-lsp-${{ matrix.target }}.zip" | Out-File -Encoding ASCII yaml-tftpl-lsp-${{ matrix.target }}.zip.sha256
 
       - uses: actions/upload-artifact@v4
         with:
