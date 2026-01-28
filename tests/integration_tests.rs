@@ -4,9 +4,28 @@
 //! from document text to LSP diagnostics.
 
 use std::fs;
+use tower_lsp::lsp_types::Diagnostic;
 
-/// Test helper to compute diagnostics for a given text
-fn compute_diagnostics(text: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+/// Compute diagnostics running the full pipeline (YAML parsing + workflow validation).
+/// Matches what the LSP backend does.
+fn compute_diagnostics(text: &str) -> Vec<Diagnostic> {
+    use yaml_tftpl_lsp::diagnostics::{validate_workflow, DiagnosticCollector};
+    use yaml_tftpl_lsp::parser::{parse_yaml, preprocess_expressions};
+
+    let mut collector = DiagnosticCollector::new();
+    let (preprocessed, expression_map) = preprocess_expressions(text);
+    let result = parse_yaml(&preprocessed, &expression_map, &mut collector);
+
+    if let Some(ref value) = result.value {
+        validate_workflow(value, &preprocessed, &mut collector);
+    }
+
+    collector.into_diagnostics()
+}
+
+/// Compute only YAML parse diagnostics (no workflow structure validation).
+/// Use this for tests that check YAML syntax handling with non-workflow documents.
+fn compute_yaml_diagnostics(text: &str) -> Vec<Diagnostic> {
     use yaml_tftpl_lsp::diagnostics::DiagnosticCollector;
     use yaml_tftpl_lsp::parser::{parse_yaml, preprocess_expressions};
 
@@ -39,7 +58,7 @@ config:
   value: ${var.config_value}
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Expected no diagnostics for valid YAML with Terraform expressions"
@@ -76,7 +95,7 @@ main:
           - config: ${jsonencode(var.config)}
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Expected no diagnostics for mixed expressions"
@@ -94,7 +113,7 @@ config: ${jsonencode({
 })}
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Expected no diagnostics for nested Terraform expressions"
@@ -133,7 +152,7 @@ another: value
 fn test_empty_document() {
     let text = "";
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(diagnostics.is_empty(), "Empty document should be valid");
 }
 
@@ -144,7 +163,7 @@ fn test_comment_only_document() {
 # Another comment
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Comment-only document should be valid"
@@ -361,7 +380,7 @@ message: "Hello ${var.name}!"
 timestamp: $${sys.now()}
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Expressions in strings should be valid"
@@ -372,7 +391,7 @@ timestamp: $${sys.now()}
 fn test_multiple_expressions_same_line() {
     let text = "args: [${var.a}, ${var.b}, ${var.c}]";
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Multiple expressions on same line should be valid"
@@ -384,7 +403,7 @@ fn test_expression_at_yaml_key_position() {
     // While unusual, expressions can appear in key positions
     let text = "${var.key}: value";
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Expression as YAML key should be valid"
@@ -405,9 +424,189 @@ level1:
           setting2: ${var.setting}
 "#;
 
-    let diagnostics = compute_diagnostics(text);
+    let diagnostics = compute_yaml_diagnostics(text);
     assert!(
         diagnostics.is_empty(),
         "Deeply nested YAML with expressions should be valid"
+    );
+}
+
+// ============================================================================
+// Phase 7: Workflow structure validation integration tests
+// ============================================================================
+
+#[test]
+fn test_workflow_missing_main_produces_warning() {
+    let text = r#"
+helper:
+  steps:
+    - init:
+        assign:
+          - x: 1
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.iter().any(|d| d.message.contains("'main'")),
+        "Missing 'main' block should produce a warning, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_workflow_main_missing_steps_produces_warning() {
+    let text = r#"
+main:
+  params:
+    - project_id
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.iter().any(|d| d.message.contains("'steps'")),
+        "Main block without 'steps' should produce a warning, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_workflow_steps_not_a_list() {
+    let text = r#"
+main:
+  steps:
+    init:
+      assign:
+        - x: 1
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| d.message.contains("'steps' must be a list")),
+        "Non-list 'steps' should produce a warning, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_workflow_unknown_top_level_key_produces_hint() {
+    let text = r#"
+main:
+  steps:
+    - init:
+        assign:
+          - x: 1
+unknown_key: true
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| d.message.contains("Unknown workflow element")),
+        "Unknown top-level key should produce a hint, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_workflow_valid_subworkflow_no_extra_warnings() {
+    let text = r#"
+main:
+  steps:
+    - callHelper:
+        call: helper
+        args:
+          name: "test"
+helper:
+  params:
+    - name
+  steps:
+    - greet:
+        assign:
+          - msg: "hello"
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    // Should have no errors or warnings (hints about unknown step modifiers are acceptable)
+    let errors_and_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| {
+            d.severity
+                != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT)
+        })
+        .collect();
+    assert!(
+        errors_and_warnings.is_empty(),
+        "Valid workflow with subworkflow should produce no errors/warnings, got: {:?}",
+        errors_and_warnings
+    );
+}
+
+#[test]
+fn test_workflow_with_expressions_validates_structure() {
+    let text = r#"
+main:
+  steps:
+    - init:
+        assign:
+          - project: ${var.project_id}
+          - timestamp: $${sys.now()}
+    - callApi:
+        call: http.post
+        args:
+          url: https://api.example.com/${var.endpoint}
+        result: response
+    - done:
+        return: $${response}
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics.is_empty(),
+        "Valid workflow with expressions should pass validation, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_non_mapping_document_produces_warning() {
+    let text = r#"
+- item1
+- item2
+- item3
+"#;
+
+    let diagnostics = compute_diagnostics(text);
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| d.message.contains("YAML mapping")),
+        "Non-mapping document should produce a warning, got: {:?}",
+        diagnostics
+    );
+}
+
+#[test]
+fn test_workflow_fixture_with_full_validation() {
+    let text = fs::read_to_string("tests/fixtures/valid/workflow.yaml.tftpl")
+        .expect("Failed to read fixture");
+
+    let diagnostics = compute_diagnostics(&text);
+
+    // Filter to only errors and warnings (hints about unknown keys are acceptable)
+    let errors_and_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| {
+            d.severity
+                != Some(tower_lsp::lsp_types::DiagnosticSeverity::HINT)
+        })
+        .collect();
+
+    assert!(
+        errors_and_warnings.is_empty(),
+        "Valid workflow fixture should have no errors/warnings with full validation, got: {:?}",
+        errors_and_warnings
     );
 }

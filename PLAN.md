@@ -291,15 +291,15 @@ Phase 5: Diagnostic Publishing
 - [X] Map error positions to line/column
 - [X] Test with real .yaml.tftpl files from the project
 Phase 6: Workflow Structure Validation (Optional MVP Enhancement)
-- [ ] Define workflow schema rules
-- [ ] Implement structural validator
-- [ ] Add warnings for unknown keys
-- [ ] Add hints for best practices
+- [X] Define workflow schema rules
+- [X] Implement structural validator
+- [X] Add warnings for unknown keys
+- [X] Add hints for best practices
 Phase 7: Testing & Documentation
-- [ ] Integration tests with LSP client
-- [ ] Test with fixture files from terraform-modules-trigger
-- [ ] Document installation and configuration
-- [ ] Add troubleshooting guide
+- [X] Integration tests with LSP client
+- [X] Test with fixture files from terraform-modules-trigger
+- [X] Document installation and configuration
+- [X] Add troubleshooting guide
 Phase 8: CI/CD & Release
 - [ ] GitHub Actions for CI (build, test, lint)
 - [ ] Multi-platform release builds (Linux, macOS, Windows)
