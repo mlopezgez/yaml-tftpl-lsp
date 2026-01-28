@@ -20,6 +20,42 @@ Standard YAML LSPs flag these expressions as invalid, creating noise. This LSP p
 
 ## Installation
 
+### Download from GitHub Releases
+
+Download the latest binary for your platform from [GitHub Releases](https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest).
+
+#### Linux (x64)
+
+```bash
+curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv yaml-tftpl-lsp /usr/local/bin/
+```
+
+#### Linux (ARM64)
+
+```bash
+curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-aarch64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv yaml-tftpl-lsp /usr/local/bin/
+```
+
+#### macOS (Apple Silicon)
+
+```bash
+curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv yaml-tftpl-lsp /usr/local/bin/
+```
+
+#### macOS (Intel)
+
+```bash
+curl -L https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest/download/yaml-tftpl-lsp-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv yaml-tftpl-lsp /usr/local/bin/
+```
+
+#### Windows (x64)
+
+Download `yaml-tftpl-lsp-x86_64-pc-windows-msvc.zip` from the [releases page](https://github.com/mlopezgez/yaml-tftpl-lsp/releases/latest), extract it, and add the executable to your PATH.
+
 ### Building from source
 
 ```bash
