@@ -1,6 +1,6 @@
 //! Parser module for YAML and expression handling
 
-mod expressions;
+pub(crate) mod expressions;
 mod preprocessor;
 mod yaml;
 

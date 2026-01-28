@@ -7,4 +7,5 @@
 mod workflow_validator;
 mod yaml_errors;
 
+pub use workflow_validator::validate_workflow;
 pub use yaml_errors::{DiagnosticCode, DiagnosticCollector};

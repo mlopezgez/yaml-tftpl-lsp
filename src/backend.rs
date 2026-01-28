@@ -66,8 +66,15 @@ impl Backend {
 
         // Parse YAML and collect errors
         tracing::trace!("Parsing YAML");
-        crate::parser::parse_yaml(&preprocessed, &expression_map, &mut collector);
+        let result = crate::parser::parse_yaml(&preprocessed, &expression_map, &mut collector);
         tracing::trace!("YAML parsing complete");
+
+        // If parsing succeeded, validate workflow structure
+        if let Some(ref value) = result.value {
+            tracing::trace!("Validating workflow structure");
+            crate::diagnostics::validate_workflow(value, &preprocessed, &mut collector);
+            tracing::trace!("Workflow validation complete");
+        }
 
         collector.into_diagnostics()
     }
